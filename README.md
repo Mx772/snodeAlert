@@ -12,6 +12,11 @@ A Python application that monitors radiosondes (weather balloons) and sends noti
 - Notifications via Discord using Apprise (expandable to other platforms)
 - Configurable via YAML file
 
+## Example
+
+![image](https://github.com/user-attachments/assets/29ef526d-986a-428d-82ea-f60021018e29)
+
+
 ## Requirements
 
 - Python 3.7+
