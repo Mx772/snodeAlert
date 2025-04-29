@@ -1,0 +1,4 @@
+sondehub~=0.3.2
+apprise~=1.4.0
+pyyaml~=6.0
+haversine~=2.8.0

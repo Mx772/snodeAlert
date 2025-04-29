@@ -1,0 +1,27 @@
+# User location settings
+location:
+  latitude: 40.7128  # Replace with your latitude
+  longitude: -74.0060  # Replace with your longitude
+  name: "New York City"  # Location name for notifications
+
+# Notification settings
+notifications:
+  apprise_urls:
+    - "discord://webhook_id/webhook_token"  # Replace with your Discord webhook URL
+
+# Alert criteria
+criteria:
+  - name: "Nearby Low Altitude"  # Name for this alert condition
+    distance_miles: 25  # Maximum distance in miles
+    altitude_feet_max: 1000  # Maximum altitude in feet
+    climb_rate_max: 0  # Maximum climb rate in m/s (negative means descending)
+    enabled: true
+  
+  # - name: "Nearby Any Altitude" 
+  #   distance_miles: 15  # Maximum distance in miles
+  #   enabled: true
+
+# Application settings
+app:
+  check_interval_seconds: 300  # How often to check for radiosondes meeting criteria
+  log_level: "INFO"  # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
