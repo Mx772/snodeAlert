@@ -105,6 +105,14 @@ cp .env.example .env
 ```bash
 docker compose up
 ```
+
+### Publishing the image (GitHub Container Registry)
+
+This repo includes a GitHub Actions workflow that builds and pushes the Docker image to GHCR:
+
+- Pushes to `main` publish the `latest` tag
+- Tags like `v1.2.3` publish a matching `v1.2.3` tag
+
 ### Environment variable overrides
 
 The app loads `.env` (if present) and uses environment variables for all configuration:
