@@ -1,0 +1,7 @@
+services:
+  snodealert:
+    image: ghcr.io/Mx772/snodealert:latest
+    container_name: snodealert
+    restart: unless-stopped
+    env_file:
+      - .env

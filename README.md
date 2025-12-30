@@ -90,11 +90,35 @@ source .venv/bin/activate
 python snode_alert.py
 ```
 
-Optionally, specify a different config file:
+## Docker
+
+1. Create a `.env` file from the example:
 
 ```bash
-python snode_alert.py --config my_config.yaml
+cp .env.example .env
 ```
+
+2. Edit `.env` with your location, Apprise URL(s), and alert criteria.
+
+3. Build and run:
+
+```bash
+docker compose up
+```
+### Environment variable overrides
+
+The app loads `.env` (if present) and uses environment variables for all configuration:
+
+Required:
+- `SNODEALERT_LOCATION_LATITUDE`
+- `SNODEALERT_LOCATION_LONGITUDE`
+- `SNODEALERT_APPRISE_URLS` (comma/newline separated string, or a YAML list)
+- `SNODEALERT_CRITERIA_YAML` (YAML for the entire `criteria` list)
+
+Optional:
+- `SNODEALERT_LOCATION_NAME`
+- `SNODEALERT_CHECK_INTERVAL_SECONDS`
+- `SNODEALERT_LOG_LEVEL`
 
 ## How It Works
 

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import time
 import logging
 import yaml
+from dotenv import load_dotenv
 from haversine import haversine, Unit
 import apprise
 import sondehub
@@ -19,9 +21,59 @@ logging.basicConfig(
 )
 logger = logging.getLogger('snodeAlert')
 
+
+def apply_env_overrides(config):
+    if config is None:
+        config = {}
+
+    location = config.setdefault('location', {})
+    notifications = config.setdefault('notifications', {})
+    app = config.setdefault('app', {})
+
+    v = os.getenv('SNODEALERT_LOCATION_LATITUDE')
+    if v not in (None, ''):
+        location['latitude'] = float(v)
+
+    v = os.getenv('SNODEALERT_LOCATION_LONGITUDE')
+    if v not in (None, ''):
+        location['longitude'] = float(v)
+
+    v = os.getenv('SNODEALERT_LOCATION_NAME')
+    if v not in (None, ''):
+        location['name'] = v
+
+    v = os.getenv('SNODEALERT_APPRISE_URLS')
+    if v not in (None, ''):
+        urls = None
+        try:
+            loaded = yaml.safe_load(v)
+            if isinstance(loaded, list):
+                urls = [str(x) for x in loaded if str(x).strip()]
+        except Exception:
+            urls = None
+
+        if urls is None:
+            urls = [u.strip() for u in v.replace('\n', ',').split(',') if u.strip()]
+
+        notifications['apprise_urls'] = urls
+
+    v = os.getenv('SNODEALERT_CHECK_INTERVAL_SECONDS')
+    if v not in (None, ''):
+        app['check_interval_seconds'] = int(v)
+
+    v = os.getenv('SNODEALERT_LOG_LEVEL')
+    if v not in (None, ''):
+        app['log_level'] = v
+
+    v = os.getenv('SNODEALERT_CRITERIA_YAML')
+    if v not in (None, ''):
+        config['criteria'] = yaml.safe_load(v)
+
+    return config
+
 class SondeAlert:
-    def __init__(self, config_path='config.yaml'):
-        self.config = self.load_config(config_path)
+    def __init__(self):
+        self.config = self.load_config()
         self.setup_logging()
         
         # Initialize apprise notification object
@@ -42,15 +94,43 @@ class SondeAlert:
         # Start the stream
         self.stream = None
     
-    def load_config(self, config_path):
-        """Load configuration from YAML file"""
+    def load_config(self):
+        """Load configuration from environment variables (.env supported)."""
         try:
-            with open(config_path, 'r') as f:
-                config = yaml.safe_load(f)
-                logger.info(f"Loaded configuration from {config_path}")
-                return config
+            load_dotenv(override=False)
+
+            config = apply_env_overrides({})
+
+            location = config.get('location') or {}
+            notifications = config.get('notifications') or {}
+            app = config.get('app') or {}
+
+            if 'latitude' not in location or 'longitude' not in location:
+                raise ValueError('Missing required env vars: SNODEALERT_LOCATION_LATITUDE and SNODEALERT_LOCATION_LONGITUDE')
+            if 'name' not in location or str(location.get('name', '')).strip() == '':
+                location['name'] = 'Unknown'
+
+            apprise_urls = notifications.get('apprise_urls')
+            if not isinstance(apprise_urls, list) or len(apprise_urls) == 0:
+                raise ValueError('Missing required env var: SNODEALERT_APPRISE_URLS (must provide at least one URL)')
+
+            criteria = config.get('criteria')
+            if not isinstance(criteria, list) or len(criteria) == 0:
+                raise ValueError('Missing required env var: SNODEALERT_CRITERIA_YAML (must be a YAML list)')
+
+            if 'check_interval_seconds' not in app:
+                app['check_interval_seconds'] = 300
+            if 'log_level' not in app:
+                app['log_level'] = 'INFO'
+
+            config['location'] = location
+            config['notifications'] = notifications
+            config['app'] = app
+
+            logger.info('Loaded configuration from environment variables')
+            return config
         except Exception as e:
-            logger.error(f"Failed to load config from {config_path}: {e}")
+            logger.error(f"Failed to load config from environment: {e}")
             sys.exit(1)
     
     def setup_logging(self):
@@ -196,12 +276,6 @@ class SondeAlert:
 
 
 if __name__ == "__main__":
-    # Parse command line arguments
-    import argparse
-    parser = argparse.ArgumentParser(description='SondeAlert - Radiosonde proximity alerting system')
-    parser.add_argument('-c', '--config', default='config.yaml', help='Path to config file')
-    args = parser.parse_args()
-    
     # Start the application
-    app = SondeAlert(config_path=args.config)
+    app = SondeAlert()
     app.start()
